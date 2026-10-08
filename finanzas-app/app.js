@@ -411,7 +411,7 @@ function setupTheme() {
     state.theme = isDark ? 'dark' : 'light';
     localStorage.setItem('finanzaspro_theme', state.theme);
     renderCharts();
-    lucide.createIcons();
+    safeCreateIcons();
   });
 }
 
@@ -448,6 +448,12 @@ function setupPWA() {
   });
 }
 
+function safeCreateIcons() {
+  if (typeof lucide !== 'undefined' && lucide && typeof lucide.createIcons === 'function') {
+    lucide.createIcons();
+  }
+}
+
 // ================= RENDERIZADO GENERAL =================
 function renderApp() {
   updateCurrencySymbols();
@@ -457,7 +463,7 @@ function renderApp() {
   renderFixedExpenses();
   renderGoals();
   renderBudgets();
-  lucide.createIcons();
+  safeCreateIcons();
 }
 
 function updateCurrencySymbols() {
@@ -742,6 +748,170 @@ function renderDashboardFixedWidget() {
   `;
 }
 
+// ================= RENDERIZADO DE GRÁFICOS (CHART.JS) =================
+function renderCharts(categoryExpenses, totalIncome, totalExpense) {
+  const isDark = document.documentElement.classList.contains('dark');
+  const textColor = isDark ? '#cbd5e1' : '#475569';
+  const gridColor = isDark ? '#334155' : '#f1f5f9';
+
+  // Si no se pasaron parámetros (ej. cambio de tema), calcular con datos del mes actual
+  if (!categoryExpenses || typeof totalIncome === 'undefined' || typeof totalExpense === 'undefined') {
+    const currentMonthTxs = getTransactionsForCurrentMonth();
+    totalIncome = 0;
+    totalExpense = 0;
+    categoryExpenses = {};
+    currentMonthTxs.forEach(tx => {
+      const val = Number(tx.amount) || 0;
+      if (tx.type === 'income') {
+        totalIncome += val;
+      } else {
+        totalExpense += val;
+        categoryExpenses[tx.category] = (categoryExpenses[tx.category] || 0) + val;
+      }
+    });
+  }
+
+  // Actualizar label de gastos totales en tarjeta de categorías
+  const chartTotalExpenseLabel = document.getElementById('chartTotalExpenseLabel');
+  if (chartTotalExpenseLabel) {
+    chartTotalExpenseLabel.textContent = formatMoney(totalExpense);
+  }
+
+  // Si Chart.js no está disponible (ej. sin conexión a internet), no romper la app
+  if (typeof Chart === 'undefined') {
+    return;
+  }
+
+  // 1. Gráfico de Dona: Gastos por Categoría
+  const catCanvas = document.getElementById('categoryChart');
+  const noDataNotice = document.getElementById('noChartDataNotice');
+
+  if (catCanvas) {
+    const categories = Object.keys(categoryExpenses).filter(cat => categoryExpenses[cat] > 0);
+    const amounts = categories.map(cat => categoryExpenses[cat]);
+
+    if (categoryChartInstance) {
+      categoryChartInstance.destroy();
+      categoryChartInstance = null;
+    }
+
+    if (amounts.length === 0 || totalExpense === 0) {
+      if (noDataNotice) noDataNotice.classList.remove('hidden');
+      catCanvas.classList.add('hidden');
+    } else {
+      if (noDataNotice) noDataNotice.classList.add('hidden');
+      catCanvas.classList.remove('hidden');
+
+      const palette = [
+        '#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6',
+        '#06b6d4', '#f43f5e', '#6366f1', '#14b8a6', '#64748b'
+      ];
+
+      const ctx = catCanvas.getContext('2d');
+      categoryChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: categories,
+          datasets: [{
+            data: amounts,
+            backgroundColor: categories.map((_, i) => palette[i % palette.length]),
+            borderWidth: 2,
+            borderColor: isDark ? '#0f172a' : '#ffffff',
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '68%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                boxWidth: 12,
+                padding: 10,
+                color: textColor,
+                font: { size: 11 }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  const val = context.raw || 0;
+                  const pct = totalExpense > 0 ? ((val / totalExpense) * 100).toFixed(1) : 0;
+                  return ` ${context.label}: ${formatMoney(val)} (${pct}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  // 2. Gráfico de Barras: Comparativa Ingresos vs Gastos
+  const cashflowCanvas = document.getElementById('cashflowChart');
+  if (cashflowCanvas) {
+    if (cashflowChartInstance) {
+      cashflowChartInstance.destroy();
+      cashflowChartInstance = null;
+    }
+
+    const net = totalIncome - totalExpense;
+    const ctx = cashflowCanvas.getContext('2d');
+    cashflowChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Ingresos', 'Gastos', 'Balance Neto'],
+        datasets: [{
+          label: 'Monto',
+          data: [totalIncome, totalExpense, net],
+          backgroundColor: [
+            '#10b981',
+            '#f43f5e',
+            net >= 0 ? '#3b82f6' : '#f97316'
+          ],
+          borderRadius: 8,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                return ` ${context.label}: ${formatMoney(context.raw)}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              color: textColor,
+              font: { size: 11, weight: '600' }
+            }
+          },
+          y: {
+            grid: { color: gridColor },
+            ticks: {
+              color: textColor,
+              font: { size: 10 },
+              callback: function (value) {
+                return formatMoney(value);
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+}
+
 // ================= RENDER SECCIÓN DEDICADA: GASTOS FIJOS =================
 let currentFixedFilter = 'all';
 
@@ -815,7 +985,7 @@ function renderFixedExpenses() {
         ` : ''}
       </div>
     `;
-    lucide.createIcons();
+    safeCreateIcons();
     return;
   }
 
@@ -956,7 +1126,7 @@ function renderFixedExpenses() {
     `;
   }).join('');
 
-  lucide.createIcons();
+  safeCreateIcons();
 }
 
 // Modal para Registrar Pago (Completo o Parcial con fecha)
@@ -1316,6 +1486,140 @@ function deleteTransaction(txId) {
   }
 }
 
+function applyTransactionFilters() {
+  const container = document.getElementById('fullTxList');
+  if (!container) return;
+
+  const currentMonthTransactions = getTransactionsForCurrentMonth();
+
+  // Actualizar contador en sidebar desktop
+  const badgeTxCount = document.getElementById('badgeTxCount');
+  if (badgeTxCount) {
+    badgeTxCount.textContent = currentMonthTransactions.length;
+  }
+
+  const searchInput = document.getElementById('txSearchInput');
+  const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+  const catSelect = document.getElementById('txCategoryFilter');
+  const selectedCat = catSelect ? catSelect.value : 'all';
+
+  const activeTypeBtn = document.querySelector('.tx-type-filter.active');
+  const selectedType = activeTypeBtn ? activeTypeBtn.getAttribute('data-filter-type') : 'all';
+
+  let filtered = currentMonthTransactions.filter(tx => {
+    if (selectedType !== 'all' && tx.type !== selectedType) return false;
+    if (selectedCat !== 'all' && tx.category !== selectedCat) return false;
+    if (query) {
+      const inConcept = (tx.concept || '').toLowerCase().includes(query);
+      const inNotes = (tx.notes || '').toLowerCase().includes(query);
+      const inCat = (tx.category || '').toLowerCase().includes(query);
+      const inMethod = (tx.paymentMethod || '').toLowerCase().includes(query);
+      const inAmount = String(tx.amount || '').includes(query);
+      if (!inConcept && !inNotes && !inCat && !inMethod && !inAmount) return false;
+    }
+    return true;
+  });
+
+  filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const countLabel = document.getElementById('txFilteredCount');
+  if (countLabel) {
+    countLabel.textContent = `${filtered.length} transacción${filtered.length === 1 ? '' : 'es'}`;
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="py-16 text-center text-slate-400">
+        <div class="w-16 h-16 rounded-3xl bg-slate-100 dark:bg-slate-800 text-slate-400 mx-auto flex items-center justify-center mb-3">
+          <i data-lucide="receipt" class="w-8 h-8 opacity-60"></i>
+        </div>
+        <h3 class="font-bold text-base text-slate-700 dark:text-slate-200">No hay movimientos registrados</h3>
+        <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+          ${currentMonthTransactions.length === 0 ? `No tienes transacciones registradas en ${MONTH_NAMES[state.selectedMonth]} de ${state.selectedYear}.` : 'No se encontraron resultados con los filtros actuales.'}
+        </p>
+        <button onclick="openNewTxModal('expense')" class="mt-4 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition">
+          + Nueva Transacción
+        </button>
+      </div>
+    `;
+    safeCreateIcons();
+    return;
+  }
+
+  container.innerHTML = filtered.map(tx => {
+    const isInc = tx.type === 'income';
+    const meta = getCategoryMeta(tx.category, tx.type);
+
+    return `
+      <div class="p-3.5 sm:p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition flex items-center justify-between gap-3 group">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${isInc ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-400'}">
+            <i data-lucide="${meta.icon}" class="w-5 h-5"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <h4 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">${escapeHTML(tx.concept)}</h4>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${isInc ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}">
+                ${escapeHTML(tx.category)}
+              </span>
+            </div>
+            <div class="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+              <span class="flex items-center gap-1">
+                <i data-lucide="calendar" class="w-3 h-3 text-emerald-500"></i>
+                ${tx.date}
+              </span>
+              <span>•</span>
+              <span>${escapeHTML(tx.paymentMethod || 'Efectivo')}</span>
+              ${tx.notes ? `<span class="hidden sm:inline italic text-slate-400 truncate">• "${escapeHTML(tx.notes)}"</span>` : ''}
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 shrink-0">
+          <div class="text-right">
+            <div class="font-black text-xs sm:text-base ${isInc ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}">
+              ${isInc ? '+' : '-'}${formatMoney(tx.amount)}
+            </div>
+            <div class="text-[10px] font-medium ${isInc ? 'text-emerald-500' : 'text-slate-400'}">
+              ${isInc ? 'Ingreso' : 'Gasto'}
+            </div>
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick="openEditTxModal('${tx.id}')" title="Modificar transacción" class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+              <i data-lucide="edit-3" class="w-4 h-4"></i>
+            </button>
+            <button onclick="deleteTransaction('${tx.id}')" title="Eliminar transacción" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  safeCreateIcons();
+}
+
+function renderTransactions() {
+  const select = document.getElementById('txCategoryFilter');
+  if (select) {
+    const currentVal = select.value || 'all';
+    const allCategories = new Set();
+    EXPENSE_CATEGORIES.forEach(c => allCategories.add(c.name));
+    INCOME_CATEGORIES.forEach(c => allCategories.add(c.name));
+
+    let html = '<option value="all">Todas las categorías</option>';
+    allCategories.forEach(cat => {
+      html += `<option value="${escapeHTML(cat)}">${escapeHTML(cat)}</option>`;
+    });
+    select.innerHTML = html;
+    select.value = currentVal;
+  }
+
+  applyTransactionFilters();
+}
+
 // ================= GESTIÓN DE METAS DE AHORRO =================
 function openNewGoalModal() {
   document.getElementById('goalModalTitle').textContent = 'Nueva Meta de Ahorro';
@@ -1480,6 +1784,127 @@ function triggerConfetti() {
   }
 }
 
+function renderGoals() {
+  const container = document.getElementById('goalsListGrid');
+  if (!container) return;
+
+  const totalAccumulated = state.goals.reduce((sum, g) => sum + (Number(g.currentAmount) || 0), 0);
+  const totalAccumulatedEl = document.getElementById('goalsTotalAccumulated');
+  if (totalAccumulatedEl) {
+    totalAccumulatedEl.textContent = formatMoney(totalAccumulated);
+  }
+
+  // Actualizar badge en sidebar desktop
+  const badgeGoals = document.getElementById('badgeGoalsCount');
+  if (badgeGoals) {
+    badgeGoals.textContent = state.goals.length;
+  }
+
+  if (state.goals.length === 0) {
+    container.innerHTML = `
+      <div class="col-span-full py-16 text-center text-slate-400">
+        <div class="w-16 h-16 rounded-3xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500 mx-auto flex items-center justify-center mb-3">
+          <i data-lucide="target" class="w-8 h-8"></i>
+        </div>
+        <h3 class="font-bold text-base text-slate-700 dark:text-slate-200">No tienes metas de ahorro registradas</h3>
+        <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+          Crea metas de ahorro para vacaciones, fondo de emergencia, vehículos o inversiones y sigue tu progreso paso a paso.
+        </p>
+        <button onclick="openNewGoalModal()" class="mt-4 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition">
+          + Crear Primera Meta
+        </button>
+      </div>
+    `;
+    safeCreateIcons();
+    return;
+  }
+
+  container.innerHTML = state.goals.map(goal => {
+    const current = Number(goal.currentAmount) || 0;
+    const target = Number(goal.targetAmount) || 1;
+    const pct = Math.min(100, Math.round((current / target) * 100));
+    const remaining = Math.max(0, target - current);
+    const isCompleted = current >= target;
+
+    const colorMap = {
+      emerald: { bar: 'bg-emerald-500', iconBg: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-900/60' },
+      blue: { bar: 'bg-blue-500', iconBg: 'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400', border: 'border-blue-200 dark:border-blue-900/60' },
+      purple: { bar: 'bg-purple-500', iconBg: 'bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400', border: 'border-purple-200 dark:border-purple-900/60' },
+      amber: { bar: 'bg-amber-500', iconBg: 'bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400', border: 'border-amber-200 dark:border-amber-900/60' },
+      rose: { bar: 'bg-rose-500', iconBg: 'bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-400', border: 'border-rose-200 dark:border-rose-900/60' }
+    };
+    const cTheme = colorMap[goal.color] || colorMap.emerald;
+
+    return `
+      <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border ${isCompleted ? 'border-emerald-300 dark:border-emerald-800 shadow-emerald-500/10' : 'border-slate-200 dark:border-slate-800'} shadow-xs flex flex-col justify-between space-y-4 transition">
+        <div>
+          <!-- Header: Icon, Title & Edit/Delete -->
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${cTheme.iconBg}">
+                <i data-lucide="${isCompleted ? 'check-circle-2' : 'target'}" class="w-5 h-5"></i>
+              </div>
+              <div class="min-w-0">
+                <h4 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white truncate">${escapeHTML(goal.title)}</h4>
+                <div class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                  ${goal.deadline ? `<span>Plazo: ${goal.deadline}</span>` : '<span>Sin fecha límite</span>'}
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center">
+              <button onclick="openEditGoalModal('${goal.id}')" title="Modificar meta" class="p-1.5 text-slate-400 hover:text-emerald-600 transition">
+                <i data-lucide="edit-3" class="w-4 h-4"></i>
+              </button>
+              <button onclick="deleteGoal('${goal.id}')" title="Eliminar meta" class="p-1.5 text-slate-400 hover:text-rose-600 transition">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Montos y Progreso -->
+          <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+            <div class="flex items-baseline justify-between">
+              <span class="text-xs text-slate-400 font-semibold uppercase">Ahorrado:</span>
+              <span class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">${formatMoney(current)}</span>
+            </div>
+
+            <div class="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-200 dark:border-slate-700/60">
+              <div class="${cTheme.bar} h-full rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold ${isCompleted ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}">
+                ${isCompleted ? '🎉 ¡Meta cumplida!' : `${pct}% acumulado`}
+              </span>
+              <span class="text-slate-400">Objetivo: <strong class="text-slate-700 dark:text-slate-300">${formatMoney(target)}</strong></span>
+            </div>
+
+            ${!isCompleted ? `
+              <div class="text-[11px] text-amber-600 dark:text-amber-400 font-medium text-right pt-0.5">
+                Faltan ${formatMoney(remaining)} por ahorrar
+              </div>
+            ` : ''}
+          </div>
+        </div>
+
+        <!-- Botones de Acción: Abonar / Retirar -->
+        <div class="pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2">
+          <button onclick="openGoalFundModal('${goal.id}', 'deposit')" class="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition active:scale-95">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+            <span>Abonar</span>
+          </button>
+          <button onclick="openGoalFundModal('${goal.id}', 'withdraw')" class="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs transition active:scale-95">
+            <i data-lucide="minus-circle" class="w-3.5 h-3.5"></i>
+            <span>Retirar</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  safeCreateIcons();
+}
+
 // ================= GESTIÓN DE LÍMITES DE GASTOS =================
 function openEditGlobalLimitModal() {
   document.getElementById('inputGlobalLimitAmount').value = state.budgets.globalLimit || 0;
@@ -1551,6 +1976,155 @@ function deleteCategoryBudget(categoryName) {
     renderApp();
     showToast('Límite de categoría eliminado', 'info');
   }
+}
+
+function renderBudgets() {
+  const currentMonthTransactions = getTransactionsForCurrentMonth();
+  let totalExpense = 0;
+  const categoryExpenses = {};
+
+  currentMonthTransactions.forEach(tx => {
+    if (tx.type === 'expense') {
+      const val = Number(tx.amount) || 0;
+      totalExpense += val;
+      categoryExpenses[tx.category] = (categoryExpenses[tx.category] || 0) + val;
+    }
+  });
+
+  // 1. Límite Global Mensual
+  const globalLimit = state.budgets.globalLimit || 0;
+  const remaining = globalLimit - totalExpense;
+  const consumedPct = globalLimit > 0 ? (totalExpense / globalLimit) * 100 : 0;
+
+  const spentEl = document.getElementById('budgetSpentAmount');
+  if (spentEl) spentEl.textContent = formatMoney(totalExpense);
+
+  const limitEl = document.getElementById('budgetGlobalLimitAmount');
+  if (limitEl) limitEl.textContent = formatMoney(globalLimit);
+
+  const progressBar = document.getElementById('budgetGlobalProgressBar');
+  if (progressBar) {
+    progressBar.style.width = `${Math.min(100, Math.max(0, consumedPct))}%`;
+    if (consumedPct >= 100) {
+      progressBar.className = 'h-full rounded-full bg-rose-500 transition-all duration-500';
+    } else if (consumedPct >= 80) {
+      progressBar.className = 'h-full rounded-full bg-amber-500 transition-all duration-500';
+    } else {
+      progressBar.className = 'h-full rounded-full bg-emerald-500 transition-all duration-500';
+    }
+  }
+
+  const remEl = document.getElementById('budgetGlobalRemainingText');
+  if (remEl) {
+    if (remaining >= 0) {
+      remEl.textContent = `Disponible: ${formatMoney(remaining)}`;
+      remEl.className = 'text-slate-500 dark:text-slate-400';
+    } else {
+      remEl.textContent = `Excedido por ${formatMoney(Math.abs(remaining))}`;
+      remEl.className = 'text-rose-600 dark:text-rose-400 font-semibold';
+    }
+  }
+
+  const badgeEl = document.getElementById('budgetGlobalPercentBadge');
+  if (badgeEl) {
+    badgeEl.textContent = `${consumedPct.toFixed(0)}% consumido`;
+    if (consumedPct >= 100) {
+      badgeEl.className = 'font-bold text-rose-600 dark:text-rose-400';
+    } else if (consumedPct >= 80) {
+      badgeEl.className = 'font-bold text-amber-600 dark:text-amber-400';
+    } else {
+      badgeEl.className = 'font-semibold text-emerald-600 dark:text-emerald-400';
+    }
+  }
+
+  // 2. Límites por Categoría
+  const container = document.getElementById('categoryBudgetsGrid');
+  if (!container) return;
+
+  const categoryLimits = state.budgets.categoryLimits || {};
+  const entries = Object.entries(categoryLimits);
+
+  if (entries.length === 0) {
+    container.innerHTML = `
+      <div class="col-span-full py-12 text-center text-slate-400">
+        <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 mx-auto flex items-center justify-center mb-2">
+          <i data-lucide="shield-alert" class="w-7 h-7"></i>
+        </div>
+        <h4 class="font-bold text-sm text-slate-700 dark:text-slate-200">No has asignado límites por categoría</h4>
+        <p class="text-xs text-slate-400 mt-1 max-w-xs mx-auto">Controla rubros específicos como Alimentación, Vivienda, Transporte u Ocio.</p>
+        <button onclick="openCategoryBudgetModal()" class="mt-3 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition">
+          + Asignar Primer Límite
+        </button>
+      </div>
+    `;
+    safeCreateIcons();
+    return;
+  }
+
+  container.innerHTML = entries.map(([catName, catLimit]) => {
+    const spent = categoryExpenses[catName] || 0;
+    const limit = Number(catLimit) || 0;
+    const pct = limit > 0 ? (spent / limit) * 100 : 0;
+    const diff = limit - spent;
+    const meta = getCategoryMeta(catName, 'expense');
+
+    let barColor = 'bg-emerald-500';
+    let statusText = `Disponible: ${formatMoney(diff)}`;
+    let statusClass = 'text-slate-500 dark:text-slate-400';
+
+    if (spent > limit) {
+      barColor = 'bg-rose-500';
+      statusText = `Excedido por ${formatMoney(spent - limit)}`;
+      statusClass = 'text-rose-600 dark:text-rose-400 font-bold';
+    } else if (pct >= 85) {
+      barColor = 'bg-amber-500';
+      statusClass = 'text-amber-600 dark:text-amber-400 font-medium';
+    }
+
+    return `
+      <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border ${spent > limit ? 'border-rose-200 dark:border-rose-900/60' : 'border-slate-200 dark:border-slate-800'} shadow-xs flex flex-col justify-between space-y-3 transition">
+        <div>
+          <!-- Header -->
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                <i data-lucide="${meta.icon}" class="w-4 h-4"></i>
+              </div>
+              <h4 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">${escapeHTML(catName)}</h4>
+            </div>
+            <div class="flex items-center">
+              <button onclick="openEditCategoryBudgetModal('${escapeHTML(catName)}', ${limit})" title="Modificar límite" class="p-1 text-slate-400 hover:text-emerald-600 transition">
+                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="deleteCategoryBudget('${escapeHTML(catName)}')" title="Eliminar límite" class="p-1 text-slate-400 hover:text-rose-600 transition">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Montos -->
+          <div class="mt-3 space-y-1.5">
+            <div class="flex items-baseline justify-between text-xs">
+              <span class="text-slate-400">Gastado: <strong class="text-slate-800 dark:text-slate-200">${formatMoney(spent)}</strong></span>
+              <span class="text-slate-400">Límite: <strong class="text-slate-800 dark:text-slate-200">${formatMoney(limit)}</strong></span>
+            </div>
+
+            <!-- Barra -->
+            <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden p-0.5 border border-slate-200 dark:border-slate-700/60">
+              <div class="${barColor} h-full rounded-full transition-all duration-300" style="width: ${Math.min(100, pct)}%"></div>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] pt-0.5">
+              <span class="${statusClass}">${statusText}</span>
+              <span class="font-bold ${pct >= 100 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}">${pct.toFixed(0)}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  safeCreateIcons();
 }
 
 // ================= MODAL CÓDIGO QR & CONECTIVIDAD ANDROID =================
@@ -1744,7 +2318,7 @@ function showToast(message, type = 'info') {
   `;
 
   container.appendChild(toast);
-  lucide.createIcons();
+  safeCreateIcons();
 
   setTimeout(() => {
     toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
@@ -1788,7 +2362,7 @@ function setupEventListeners() {
         }
       });
 
-      lucide.createIcons();
+      safeCreateIcons();
     });
   });
 

@@ -8,7 +8,7 @@ const outputPath = path.join(__dirname, 'FinanzasPro_Movil.html');
 const html = fs.readFileSync(htmlPath, 'utf8');
 const js = fs.readFileSync(jsPath, 'utf8');
 
-const standalone = html.replace('<script src="./app.js"></script>', '<script>\n' + js + '\n</script>');
+const standalone = html.replace(/<script src="\.\/app\.js(?:\?[^"]*)?"><\/script>/, '<script>\n' + js + '\n</script>');
 fs.writeFileSync(outputPath, standalone, 'utf8');
 
 console.log('✅ FinanzasPro_Movil.html generado exitosamente.');
