@@ -1,0 +1,22 @@
+{
+  "name": "finanzas-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Aplicación de finanzas personales para Microsoft Windows y Android",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "python": "python server.py"
+  },
+  "keywords": [
+    "finanzas",
+    "pwa",
+    "windows",
+    "android",
+    "presupuesto",
+    "ahorro"
+  ],
+  "author": "",
+  "license": "MIT"
+}
