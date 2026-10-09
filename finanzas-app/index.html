@@ -1260,215 +1260,216 @@
         </div>
       </form>
     </div>
-    <!-- MODAL: Registrar Pago / Abono de Gasto Fijo -->
-    <div id="fixedPaymentModal"
-      class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-      <div
-        class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-        <div class="flex items-center justify-between mb-3">
-          <div>
-            <h3 class="font-bold text-lg text-slate-900 dark:text-white" id="paymentModalTitle">Registrar Pago</h3>
-            <p class="text-xs text-slate-500" id="paymentModalSubtitle">Gasto Fijo: Arriendo</p>
-          </div>
-          <button id="btnCloseFixedPaymentModal"
-            class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
-            <i data-lucide="x" class="w-5 h-5"></i>
-          </button>
+  </div>
+  <!-- MODAL: Registrar Pago / Abono de Gasto Fijo -->
+  <div id="fixedPaymentModal"
+    class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div
+      class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h3 class="font-bold text-lg text-slate-900 dark:text-white" id="paymentModalTitle">Registrar Pago</h3>
+          <p class="text-xs text-slate-500" id="paymentModalSubtitle">Gasto Fijo: Arriendo</p>
         </div>
-
-        <!-- Resumen de Obligación -->
-        <div
-          class="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80 mb-4 space-y-1.5">
-          <div class="flex items-center justify-between text-xs">
-            <span class="text-slate-500">Monto Total de la Obligación:</span>
-            <span class="font-bold text-slate-900 dark:text-white" id="modalFixedTotalAmount">$0</span>
-          </div>
-          <div class="flex items-center justify-between text-xs">
-            <span class="text-slate-500">Ya Pagado este mes:</span>
-            <span class="font-bold text-emerald-600 dark:text-emerald-400" id="modalFixedPaidAmount">$0</span>
-          </div>
-          <div
-            class="flex items-center justify-between text-xs font-semibold pt-1 border-t border-slate-200 dark:border-slate-700">
-            <span class="text-slate-700 dark:text-slate-300">Saldo Restante por Liquidar:</span>
-            <span class="text-amber-600 dark:text-amber-400" id="modalFixedPendingAmount">$0</span>
-          </div>
-        </div>
-
-        <form id="fixedPaymentForm" class="space-y-4">
-          <input type="hidden" id="paymentFixedId">
-          <input type="hidden" id="paymentTypeChoice" value="full">
-
-          <!-- Selector de Tipo de Pago: Completo vs Parcial -->
-          <div>
-            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1.5">¿Cómo deseas pagar?</label>
-            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
-              <button type="button" id="btnPayTypeFull"
-                class="py-2.5 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 bg-emerald-600 text-white shadow-sm transition">
-                <i data-lucide="check-check" class="w-3.5 h-3.5"></i>
-                <span>Pago Completo</span>
-              </button>
-              <button type="button" id="btnPayTypePartial"
-                class="py-2.5 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 text-slate-600 dark:text-slate-300 hover:text-amber-600 transition">
-                <i data-lucide="pie-chart" class="w-3.5 h-3.5"></i>
-                <span>Abono Parcial</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Monto del pago -->
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="block text-xs font-semibold uppercase text-slate-400">
-                Monto a Pagar (<span class="currencySymbol">$</span>)
-              </label>
-              <button type="button" id="btnPayQuickAllPending"
-                class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
-                Pagar saldo restante completo
-              </button>
-            </div>
-            <input type="number" step="1" min="1" id="paymentAmountInput" required placeholder="0"
-              class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-lg font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
-          </div>
-
-          <!-- Fecha del pago -->
-          <div>
-            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Fecha en que realizaste el
-              pago</label>
-            <input type="date" id="paymentDateInput" required
-              class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
-          </div>
-
-          <!-- Método de pago -->
-          <div>
-            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Método de Pago</label>
-            <select id="paymentMethodSelect"
-              class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
-              <option value="Transferencia">Transferencia Bancaria</option>
-              <option value="Efectivo">Efectivo</option>
-              <option value="Tarjeta">Tarjeta de Débito / Crédito</option>
-              <option value="Débito Automático">Débito Automático</option>
-              <option value="Otro">Otro</option>
-            </select>
-          </div>
-
-          <!-- Nota / Comprobante -->
-          <div>
-            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Nota o Comprobante
-              (opcional)</label>
-            <input type="text" id="paymentNotesInput" placeholder="Ej. Abono #1 de la quincena, ref bancaria 8392..."
-              class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
-          </div>
-
-          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-            <button type="button" id="btnCancelFixedPayment"
-              class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-              Cancelar
-            </button>
-            <button type="submit"
-              class="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition active:scale-95">
-              Registrar Pago
-            </button>
-          </div>
-        </form>
+        <!-- CAMBIO AQUÍ: id="btnCloseFixedPaymentModal" -->
+        <button id="btnCloseFixedPaymentModal"
+          class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
       </div>
-    </div>
 
-    <!-- MODAL: Conectar / Ejecutar en tu Celular Android -->
-    <div id="mobileConnectModal"
-      class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+      <!-- Resumen de Obligación -->
       <div
-        class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-2xl animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between mb-3 text-left">
-          <div class="flex items-center gap-2">
-            <div
-              class="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <i data-lucide="smartphone" class="w-4 h-4"></i>
-            </div>
-            <h3 class="font-bold text-base text-slate-900 dark:text-white">Ejecutar en tu Celular</h3>
+        class="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80 mb-4 space-y-1.5">
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-slate-500">Monto Total de la Obligación:</span>
+          <span class="font-bold text-slate-900 dark:text-white" id="modalFixedTotalAmount">$0</span>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-slate-500">Ya Pagado este mes:</span>
+          <span class="font-bold text-emerald-600 dark:text-emerald-400" id="modalFixedPaidAmount">$0</span>
+        </div>
+        <div
+          class="flex items-center justify-between text-xs font-semibold pt-1 border-t border-slate-200 dark:border-slate-700">
+          <span class="text-slate-700 dark:text-slate-300">Saldo Restante por Liquidar:</span>
+          <span class="text-amber-600 dark:text-amber-400" id="modalFixedPendingAmount">$0</span>
+        </div>
+      </div>
+
+      <form id="fixedPaymentForm" class="space-y-4">
+        <input type="hidden" id="paymentFixedId">
+        <input type="hidden" id="paymentTypeChoice" value="full">
+
+        <!-- Selector de Tipo de Pago: Completo vs Parcial -->
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1.5">¿Cómo deseas pagar?</label>
+          <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+            <button type="button" id="btnPayTypeFull"
+              class="py-2.5 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 bg-emerald-600 text-white shadow-sm transition">
+              <i data-lucide="check-check" class="w-3.5 h-3.5"></i>
+              <span>Pago Completo</span>
+            </button>
+            <button type="button" id="btnPayTypePartial"
+              class="py-2.5 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 text-slate-600 dark:text-slate-300 hover:text-amber-600 transition">
+              <i data-lucide="pie-chart" class="w-3.5 h-3.5"></i>
+              <span>Abono Parcial</span>
+            </button>
           </div>
-          <button id="btnCloseMobileConnectModal"
-            class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
-            <i data-lucide="x" class="w-5 h-5"></i>
-          </button>
         </div>
 
-        <!-- Selector de Método -->
-        <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl mb-4 text-xs font-bold">
-          <button type="button" id="btnMethodWifi"
-            class="py-2 rounded-lg bg-emerald-600 text-white shadow-sm transition">
-            1. Conectar por Wi-Fi
-          </button>
-          <button type="button" id="btnMethodStandalone"
-            class="py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:text-emerald-600 transition">
-            2. Archivo Sin PC
-          </button>
+        <!-- Monto del pago -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-semibold uppercase text-slate-400">
+              Monto a Pagar (<span class="currencySymbol">$</span>)
+            </label>
+            <button type="button" id="btnPayQuickAllPending"
+              class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+              Pagar saldo restante completo
+            </button>
+          </div>
+          <input type="number" step="1" min="1" id="paymentAmountInput" required placeholder="0"
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-lg font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
         </div>
 
-        <!-- VISTA 1: Por Wi-Fi con Código QR -->
-        <div id="viewMobileWifi" class="space-y-3 text-center">
-          <p class="text-xs text-slate-500 dark:text-slate-400 text-left">
-            Conecta tu teléfono a la <strong>misma red Wi-Fi</strong> y escanea este código con la cámara de tu móvil:
+        <!-- Fecha del pago -->
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Fecha en que realizaste el
+            pago</label>
+          <input type="date" id="paymentDateInput" required
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+
+        <!-- Método de pago -->
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Método de Pago</label>
+          <select id="paymentMethodSelect"
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <option value="Transferencia">Transferencia Bancaria</option>
+            <option value="Efectivo">Efectivo</option>
+            <option value="Tarjeta">Tarjeta de Débito / Crédito</option>
+            <option value="Débito Automático">Débito Automático</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+
+        <!-- Nota / Comprobante -->
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Nota o Comprobante
+            (opcional)</label>
+          <input type="text" id="paymentNotesInput" placeholder="Ej. Abono #1 de la quincena, ref bancaria 8392..."
+            class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" id="btnCancelFixedPayment"
+            class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            Cancelar
+          </button>
+          <button type="submit"
+            class="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition active:scale-95">
+            Registrar Pago
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Conectar / Ejecutar en tu Celular Android -->
+  <div id="mobileConnectModal"
+    class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div
+      class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-2xl animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-3 text-left">
+        <div class="flex items-center gap-2">
+          <div
+            class="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <i data-lucide="smartphone" class="w-4 h-4"></i>
+          </div>
+          <h3 class="font-bold text-base text-slate-900 dark:text-white">Ejecutar en tu Celular</h3>
+        </div>
+        <button id="btnCloseMobileConnectModal"
+          class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Selector de Método -->
+      <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl mb-4 text-xs font-bold">
+        <button type="button" id="btnMethodWifi" class="py-2 rounded-lg bg-emerald-600 text-white shadow-sm transition">
+          1. Conectar por Wi-Fi
+        </button>
+        <button type="button" id="btnMethodStandalone"
+          class="py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:text-emerald-600 transition">
+          2. Archivo Sin PC
+        </button>
+      </div>
+
+      <!-- VISTA 1: Por Wi-Fi con Código QR -->
+      <div id="viewMobileWifi" class="space-y-3 text-center">
+        <p class="text-xs text-slate-500 dark:text-slate-400 text-left">
+          Conecta tu teléfono a la <strong>misma red Wi-Fi</strong> y escanea este código con la cámara de tu móvil:
+        </p>
+
+        <!-- QR Code Canvas Container -->
+        <div class="bg-white p-3 rounded-2xl border border-slate-200 dark:border-slate-700 inline-block shadow-xs">
+          <div id="qrcodeContainer" class="flex items-center justify-center min-w-[170px] min-h-[170px]"></div>
+        </div>
+
+        <div class="space-y-1.5 text-left">
+          <div class="text-[11px] text-slate-400">O escribe esto en Google Chrome en tu celular:</div>
+          <div
+            class="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl font-mono text-xs text-slate-800 dark:text-slate-200 flex items-center justify-between">
+            <span id="mobileConnectUrl">http://...</span>
+            <button id="btnCopyMobileUrl" class="text-emerald-600 hover:text-emerald-700 p-1" title="Copiar URL">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISTA 2: Archivo Autónomo (Sin necesidad de que la PC esté encendida) -->
+      <div id="viewMobileStandalone" class="hidden space-y-3 text-left">
+        <div
+          class="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 text-xs text-slate-700 dark:text-slate-300 space-y-2">
+          <div class="flex items-center gap-2 font-bold text-emerald-800 dark:text-emerald-300">
+            <i data-lucide="zap" class="w-4 h-4"></i>
+            <span>¡Úsala en tu celular sin necesidad de PC!</span>
+          </div>
+          <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+            Puedes descargar el archivo autónomo <strong>FinanzasPro_Movil.html</strong>, enviártelo a tu WhatsApp o
+            Telegram, y tocarlo para abrirlo en Chrome de tu teléfono. Funciona 100% offline y almacena tus finanzas
+            en tu celular.
           </p>
-
-          <!-- QR Code Canvas Container -->
-          <div class="bg-white p-3 rounded-2xl border border-slate-200 dark:border-slate-700 inline-block shadow-xs">
-            <div id="qrcodeContainer" class="flex items-center justify-center min-w-[170px] min-h-[170px]"></div>
-          </div>
-
-          <div class="space-y-1.5 text-left">
-            <div class="text-[11px] text-slate-400">O escribe esto en Google Chrome en tu celular:</div>
-            <div
-              class="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl font-mono text-xs text-slate-800 dark:text-slate-200 flex items-center justify-between">
-              <span id="mobileConnectUrl">http://...</span>
-              <button id="btnCopyMobileUrl" class="text-emerald-600 hover:text-emerald-700 p-1" title="Copiar URL">
-                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-              </button>
-            </div>
-          </div>
         </div>
 
-        <!-- VISTA 2: Archivo Autónomo (Sin necesidad de que la PC esté encendida) -->
-        <div id="viewMobileStandalone" class="hidden space-y-3 text-left">
-          <div
-            class="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 text-xs text-slate-700 dark:text-slate-300 space-y-2">
-            <div class="flex items-center gap-2 font-bold text-emerald-800 dark:text-emerald-300">
-              <i data-lucide="zap" class="w-4 h-4"></i>
-              <span>¡Úsala en tu celular sin necesidad de PC!</span>
-            </div>
-            <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-              Puedes descargar el archivo autónomo <strong>FinanzasPro_Movil.html</strong>, enviártelo a tu WhatsApp o
-              Telegram, y tocarlo para abrirlo en Chrome de tu teléfono. Funciona 100% offline y almacena tus finanzas
-              en tu celular.
-            </p>
-          </div>
+        <button id="btnDownloadStandaloneHtml"
+          class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded-xl text-xs font-bold shadow-sm transition active:scale-95">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Descargar FinanzasPro_Movil.html</span>
+        </button>
 
-          <button id="btnDownloadStandaloneHtml"
-            class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded-xl text-xs font-bold shadow-sm transition active:scale-95">
-            <i data-lucide="download" class="w-4 h-4"></i>
-            <span>Descargar FinanzasPro_Movil.html</span>
-          </button>
-
-          <div class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-[11px] text-slate-500 space-y-1">
-            <div class="font-bold text-slate-700 dark:text-slate-300">Pasos rápidos para tu móvil:</div>
-            <div>1. Descarga el archivo y envíatelo por WhatsApp o Drive.</div>
-            <div>2. Ábrelo en tu celular con Google Chrome.</div>
-            <div>3. En el menú (⋮) toca <strong>"Agregar a la pantalla principal"</strong>.</div>
-          </div>
-        </div>
-
-        <div
-          class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 text-left flex items-center gap-1.5">
-          <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-500 shrink-0"></i>
-          <span>Compatible con cualquier teléfono Android y iPhone.</span>
+        <div class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-[11px] text-slate-500 space-y-1">
+          <div class="font-bold text-slate-700 dark:text-slate-300">Pasos rápidos para tu móvil:</div>
+          <div>1. Descarga el archivo y envíatelo por WhatsApp o Drive.</div>
+          <div>2. Ábrelo en tu celular con Google Chrome.</div>
+          <div>3. En el menú (⋮) toca <strong>"Agregar a la pantalla principal"</strong>.</div>
         </div>
       </div>
+
+      <div
+        class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 text-left flex items-center gap-1.5">
+        <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-500 shrink-0"></i>
+        <span>Compatible con cualquier teléfono Android y iPhone.</span>
+      </div>
     </div>
+  </div>
 
-    <!-- Notification Toast Container -->
-    <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+  <!-- Notification Toast Container -->
+  <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- Main Application Logic Script -->
-    <script src="./app.js?v=2.5"></script>
+  <!-- Main Application Logic Script -->
+  <script src="./app.js?v=2.5"></script>
 </body>
 
 </html>

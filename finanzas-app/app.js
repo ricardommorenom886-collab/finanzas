@@ -1137,33 +1137,55 @@ function openFixedPaymentModal(fixedId) {
   const currentMonthKey = `${state.selectedYear}-${String(state.selectedMonth + 1).padStart(2, '0')}`;
   const st = getFixedStatusForMonth(fixed, currentMonthKey);
 
-  document.getElementById('paymentModalTitle').textContent = `Registrar Pago: ${fixed.concept}`;
-  document.getElementById('paymentModalSubtitle').textContent = `Categoría: ${fixed.category} • Vencimiento día ${fixed.dueDay}`;
-  document.getElementById('modalFixedTotalAmount').textContent = formatMoney(st.total);
-  document.getElementById('modalFixedPaidAmount').textContent = formatMoney(st.paid);
-  document.getElementById('modalFixedPendingAmount').textContent = formatMoney(st.pending);
+  // Asignación segura usando operador opcional (?.)
+  const elTitle = document.getElementById('paymentModalTitle');
+  if (elTitle) elTitle.textContent = `Registrar Pago: ${fixed.concept}`;
 
-  document.getElementById('paymentFixedId').value = fixed.id;
+  const elSubtitle = document.getElementById('paymentModalSubtitle');
+  if (elSubtitle) elSubtitle.textContent = `Categoría: ${fixed.category} • Vencimiento día ${fixed.dueDay}`;
+
+  const elTotal = document.getElementById('modalFixedTotalAmount');
+  if (elTotal) elTotal.textContent = formatMoney(st.total);
+
+  const elPaid = document.getElementById('modalFixedPaidAmount');
+  if (elPaid) elPaid.textContent = formatMoney(st.paid);
+
+  const elPending = document.getElementById('modalFixedPendingAmount');
+  if (elPending) elPending.textContent = formatMoney(st.pending);
+
+  const inputId = document.getElementById('paymentFixedId');
+  if (inputId) inputId.value = fixed.id;
   
   // Por defecto, monto sugerido es el saldo restante si queda saldo, o el total
   const defaultAmount = st.pending > 0 ? st.pending : st.total;
-  document.getElementById('paymentAmountInput').value = defaultAmount;
+  const inputAmount = document.getElementById('paymentAmountInput');
+  if (inputAmount) inputAmount.value = defaultAmount;
 
   // Fecha por defecto: hoy
   const d = new Date();
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
-  document.getElementById('paymentDateInput').value = `${yyyy}-${mm}-${dd}`;
+  const inputDate = document.getElementById('paymentDateInput');
+  if (inputDate) inputDate.value = `${yyyy}-${mm}-${dd}`;
 
-  document.getElementById('paymentMethodSelect').value = fixed.paymentMethod || 'Transferencia';
-  document.getElementById('paymentNotesInput').value = '';
+  const selectMethod = document.getElementById('paymentMethodSelect');
+  if (selectMethod) selectMethod.value = fixed.paymentMethod || 'Transferencia';
 
-  // Selector por defecto: Completo si cubre el total, o Parcial si es abono
+  const inputNotes = document.getElementById('paymentNotesInput');
+  if (inputNotes) inputNotes.value = '';
+
+  // Selector por defecto
   setPaymentTypeChoice(st.pending > 0 ? 'full' : 'partial');
 
-  document.getElementById('fixedPaymentModal').classList.remove('hidden');
-  document.getElementById('paymentAmountInput').focus();
+  // Mostrar el modal
+  const modal = document.getElementById('fixedPaymentModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    if (inputAmount) inputAmount.focus();
+  } else {
+    console.error('El modal con id "fixedPaymentModal" no existe en tu HTML.');
+  }
 }
 
 function setPaymentTypeChoice(choice) {
