@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "css:build": "npx tailwindcss@3.4.17 -i ./src-tailwind.css -o ./vendor/tailwind.min.css --minify",
     "build": "node build-mobile.js",
     "deploy": "vercel --prod",
     "python": "python server.py"

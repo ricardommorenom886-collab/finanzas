@@ -60,13 +60,109 @@ let categoryChartInstance = null;
 let cashflowChartInstance = null;
 let deferredPrompt = null; // Para PWA Install
 
+// Historial de navegación del navegador
+let currentActiveTab = 'tab-dashboard';
+let openModalStack = []; // Stack de modales abiertos para popstate
+
 // ================= INICIALIZACIÓN & DATOS POR DEFECTO =================
 function initApp() {
   loadStoredData();
   setupEventListeners();
   setupTheme();
   setupPWA();
+  setupHistoryNavigation();
+  setupScrollNavAutoHide();
   renderApp();
+}
+
+// ================= HISTORIAL DEL NAVEGADOR (pushState / popstate) =================
+function setupHistoryNavigation() {
+  // Set initial state
+  history.replaceState({ tab: currentActiveTab, modal: null }, '', '');
+
+  window.addEventListener('popstate', (event) => {
+    const st = event.state;
+
+    // If a modal is open, close it instead of navigating
+    if (openModalStack.length > 0) {
+      const topModalId = openModalStack.pop();
+      const modalEl = document.getElementById(topModalId);
+      if (modalEl) modalEl.classList.add('hidden');
+      return;
+    }
+
+    // Navigate to previous tab
+    if (st && st.tab) {
+      switchToTab(st.tab, false); // false = don't push to history
+    }
+  });
+}
+
+function pushTabState(tabId) {
+  currentActiveTab = tabId;
+  history.pushState({ tab: tabId, modal: null }, '', '');
+}
+
+function pushModalState(modalId) {
+  openModalStack.push(modalId);
+  history.pushState({ tab: currentActiveTab, modal: modalId }, '', '');
+}
+
+function closeModalWithHistory(modalId) {
+  const modalEl = document.getElementById(modalId);
+  if (modalEl && !modalEl.classList.contains('hidden')) {
+    modalEl.classList.add('hidden');
+    // Pop from stack
+    const idx = openModalStack.lastIndexOf(modalId);
+    if (idx !== -1) openModalStack.splice(idx, 1);
+  }
+}
+
+function switchToTab(tabId, pushHistory = true) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+  const activePane = document.getElementById(tabId);
+  if (activePane) activePane.classList.remove('hidden');
+
+  document.querySelectorAll('.nav-tab-btn, .mobile-nav-btn').forEach(b => {
+    b.classList.remove('active', 'text-emerald-600', 'bg-emerald-50', 'dark:bg-emerald-950/40', 'text-emerald-700', 'dark:text-emerald-300');
+  });
+
+  document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(b => {
+    b.classList.add('active');
+    if (b.classList.contains('nav-tab-btn')) {
+      b.classList.add('bg-emerald-50', 'dark:bg-emerald-950/40', 'text-emerald-700', 'dark:text-emerald-300');
+    } else {
+      b.classList.add('text-emerald-600');
+    }
+  });
+
+  currentActiveTab = tabId;
+  if (pushHistory) pushTabState(tabId);
+  safeCreateIcons();
+}
+
+// ================= SCROLL-BASED NAV AUTO-HIDE =================
+function setupScrollNavAutoHide() {
+  let lastScrollY = 0;
+  let ticking = false;
+  const nav = document.getElementById('autoHideNav');
+  if (!nav) return;
+
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      window.requestAnimationFrame(() => {
+        const currentScrollY = window.scrollY;
+        if (currentScrollY > lastScrollY && currentScrollY > 80) {
+          nav.classList.add('nav-hidden');
+        } else {
+          nav.classList.remove('nav-hidden');
+        }
+        lastScrollY = currentScrollY;
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
 }
 
 function loadStoredData() {
@@ -583,10 +679,10 @@ function renderDashboardAlerts(totalExpense, globalLimit, categoryExpenses) {
         ${alerts.map(a => `<li>${a}</li>`).join('')}
       </ul>
     `;
-    badgeBudgetAlert.classList.remove('hidden');
+    if (badgeBudgetAlert) badgeBudgetAlert.classList.remove('hidden');
   } else {
     banner.classList.add('hidden');
-    badgeBudgetAlert.classList.add('hidden');
+    if (badgeBudgetAlert) badgeBudgetAlert.classList.add('hidden');
   }
 }
 

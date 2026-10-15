@@ -1,16 +1,17 @@
 // FinanzasPro Service Worker for Offline PWA Support
-const CACHE_NAME = 'finanzas-pro-v4';
+const CACHE_NAME = 'finanzas-pro-v6';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './app.js',
   './manifest.webmanifest',
   './icons/icon.svg',
-  'https://cdn.tailwindcss.com',
-  'https://unpkg.com/lucide@latest',
-  'https://cdn.jsdelivr.net/npm/chart.js',
-  'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
+  './vendor/tailwind.min.css',
+  './vendor/responsive-pro.css',
+  './vendor/lucide.min.js',
+  './vendor/chart.umd.min.js',
+  './vendor/confetti.browser.min.js',
+  './vendor/qrcode.min.js'
 ];
 
 self.addEventListener('install', (event) => {
